@@ -21,7 +21,6 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'Net/Gearman/Task.php';
 
 /**
  * A class for creating sets of tasks

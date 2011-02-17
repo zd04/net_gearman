@@ -21,7 +21,6 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'PEAR/Exception.php';
 
 /**
  * Exception class for Net_Gearman
@@ -35,6 +34,6 @@ require_once 'PEAR/Exception.php';
  * @version   Release: @package_version@
  * @see       PEAR_Exception
  */
-class Net_Gearman_Exception extends PEAR_Exception
+class Net_Gearman_Exception extends Exception
 {
 }

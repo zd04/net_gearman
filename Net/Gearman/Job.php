@@ -21,14 +21,6 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'Net/Gearman/Job/Common.php';
-require_once 'Net/Gearman/Exception.php';
-
-// Define this if you want your Jobs to be stored in a different
-// path than the default.
-if (!defined('NET_GEARMAN_JOB_PATH')) {
-    define('NET_GEARMAN_JOB_PATH', 'Net/Gearman/Job');
-}
 
 // Define this if you want your Jobs to have a prefix requirement
 if (!defined('NET_GEARMAN_JOB_CLASS_PREFIX')) {
@@ -68,8 +60,6 @@ abstract class Net_Gearman_Job
      */
     static public function factory($job, $conn, $handle, $initParams=array())
     {
-        $file = NET_GEARMAN_JOB_PATH . '/' . $job . '.php';
-        include_once $file;
         $class = NET_GEARMAN_JOB_CLASS_PREFIX . $job;
         if (!class_exists($class)) {
             throw new Net_Gearman_Job_Exception('Invalid Job class');

@@ -21,7 +21,6 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'Net/Gearman/Job/Exception.php';
 
 /**
  * Base job class for all Gearman jobs
