@@ -117,10 +117,15 @@ abstract class Net_Gearman_Job_Common
     {
         // if we don't have a scalar
         // json encode the data
+        /*
         if(!is_scalar($result)){
             $result = json_encode($result);
         }
-
+		//*/
+    	
+    	// Because the client doesn't accept non JSON data
+    	$result = json_encode($result);
+    	
         Net_Gearman_Connection::send($this->conn, 'work_complete', array(
             'handle' => $this->handle,
             'result' => $result
