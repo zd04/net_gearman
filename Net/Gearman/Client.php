@@ -114,20 +114,17 @@ class Net_Gearman_Client
      * @return mixed          An associative array containing information about
      *                        the provided task handle. Returns false if the request failed.
      */
-    private function getStatus($handle, $server = null)
+    public function getStatus($handle)
     {
 
         $params = array(
             'handle' => $handle,
         );
 
-        if(!is_null($server)){
-            $server_list = array($server);
-        } else {
-            $server_list = $this->servers;
-        }
-
-        foreach($server_list as $s) {
+        $server_list = $this->conn;
+		
+        //foreach($server_list as $s) {
+        $s = $this->getConnection();
             Net_Gearman_Connection::send($s, 'get_status', $params);
 
             $read = array($s);
@@ -152,7 +149,6 @@ class Net_Gearman_Client
                     return $resp['data'];
                 }
             }
-        }
 
         return false;
     }
