@@ -1,5 +1,33 @@
 <?php
 
+
+class Net_Gearman_Job_Class extends Net_Gearman_Job_Common
+{
+	
+	public function __construct($conn, $handle, array $initParams=array())
+	{
+		$this->_class = $initParams['_class'];
+		$this->_method = $initParams['_method'];
+		if (!is_object($this->_class) && !class_exists($this->_class)) {
+			throw new Exception("Not a valid class");
+		}
+		parent::__construct($conn, $handle, $initParams);
+	}
+	
+    /**
+     * Run job
+     *
+     * @access      public
+     * @param       array       $arg
+     * @return      array
+     */
+    public function run($pArgs)
+    {
+    	$pArgs[] = $this;
+		return call_user_func_array(array ($this->_class,$this->_method) , $pArgs);
+    }
+}
+
 class Net_Gearman_Job_Callback extends Net_Gearman_Job_Common
 {
 	
@@ -29,9 +57,18 @@ class Net_Gearman_Job_Callback extends Net_Gearman_Job_Common
 
 class GearmanJob extends Net_Gearman_Job {
 	static public function factory($job, $conn, $handle, $initParams=array()) {
-		if (isset ($initParams['_type']) && $initParams['_type']==GearmanWorker::JOBTYPE_CALLBACK) {
-			$job = 'callback';
+		if (isset ($initParams['_type'])) {
+			switch($initParams['_type']) {
+				case GearmanWorker::JOBTYPE_CALLBACK:
+					$job = 'callback';
+					break;
+				case GearmanWorker::JOBTYPE_CLASS:
+					$job = 'class';
+					break;					
+			}
+			
 		}
+		
 		
 		return parent::factory($job, $conn, $handle, $initParams);
 	}
@@ -40,6 +77,8 @@ class GearmanJob extends Net_Gearman_Job {
 class GearmanWorker extends Net_Gearman_Worker {
 	
 	const JOBTYPE_CALLBACK = 0;
+	
+	const JOBTYPE_CLASS = 1;
 	
 	/**
 	 * Constructor
@@ -119,6 +158,15 @@ class GearmanWorker extends Net_Gearman_Worker {
 		$pInitParams['_type'] = self::JOBTYPE_CALLBACK;
 		$pInitParams['_callback'] = $pCallBack;
 		$this->addAbility($pName, $timeout, $pInitParams);
+	}
+	
+	public function addClass ($pClass, $pInitParams = array (), $pPrefix = '', $pTimeout = null) {
+		foreach (array_diff (get_class_methods($pClass), get_class_methods('Net_Gearman_Job_Common')) as $method) {
+			$pInitParams['_type'] = self::JOBTYPE_CLASS;
+			$pInitParams['_class'] = $pClass;
+			$pInitParams['_method'] = $method;
+			$this->addAbility($pPrefix.$method, $pTimeout, $pInitParams);
+		}
 	}
 	
 	/**
