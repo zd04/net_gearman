@@ -71,6 +71,12 @@ class Net_Gearman_Client
 
     protected $jobs = array ();
 
+    protected $assertWorker = false;
+
+    public function setAssetWorker ($pBool) {
+        $this->assertWorker = $pBool;
+    }
+
     /**
      * Constructor
      *
@@ -199,14 +205,14 @@ class Net_Gearman_Client
     protected function getConnection(Net_Gearman_Task $uniq)
     {
         $conn = null;
-        if(count($this->conn) === 1){
-            reset($this->conn);
-            $conn = current($this->conn);
-        } elseif(isset ($this->jobs[$uniq->func])){
+        if(isset ($this->jobs[$uniq->func])){
             $conn = $this->jobs[$uniq->func][array_rand($this->jobs[$uniq->func])];
-            var_dump($conn);
         } else {
-            $conn = $this->conn[array_rand($this->conn)];
+            if ($this->assertWorker) {
+                throw new \Exception('No workers');
+            } else {
+                $conn = $this->conn[array_rand($this->conn)];
+            }
         }
 
         return $conn;
