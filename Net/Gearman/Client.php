@@ -69,6 +69,8 @@ class Net_Gearman_Client
      */
     protected $timeout = 1000;
 
+    protected $jobs = array ();
+
     /**
      * Constructor
      *
@@ -114,6 +116,24 @@ class Net_Gearman_Client
                 "Couldn't connect to any available servers"
             );
         }
+
+        foreach ($this->conn as $conn) {
+            $return = Net_Gearman_Connection::status($conn);
+            foreach (explode ("\n", $return) as $working) {
+                $explode = explode("\t", $working);
+                if (count($explode)<4) {
+                    continue;
+                }
+                list ($worker, $waiting, $current, $available) = $explode;
+                if ($available>0) {
+                    if (!isset ($this->jobs[$worker])) {
+                        $this->jobs[$worker] = array ();
+                    }
+                    $this->jobs[$worker][]=$conn;
+                }
+            }
+        }
+
         $this->timeout = $timeout;
     }
 
@@ -172,21 +192,21 @@ class Net_Gearman_Client
     /**
      * Get a connection to a Gearman server
      *
-     * @param string  $uniq The unique id of the job
+     * @param Net_Gearman_Task $uniq The unique id of the job
      *
      * @return resource A connection to a Gearman server
      */
-    protected function getConnection($uniq = null)
+    protected function getConnection(Net_Gearman_Task $uniq)
     {
         $conn = null;
-
         if(count($this->conn) === 1){
+            reset($this->conn);
             $conn = current($this->conn);
-        } elseif($uniq === null){
-            $conn = $this->conn[array_rand($this->conn)];
+        } elseif(isset ($this->jobs[$uniq->func])){
+            $conn = $this->jobs[$uniq->func][array_rand($this->jobs[$uniq->func])];
+            var_dump($conn);
         } else {
-            $server = ord(substr(md5($uniq), -1)) % count($this->conn);
-            $conn = $this->conn[$server];
+            $conn = $this->conn[array_rand($this->conn)];
         }
 
         return $conn;
@@ -287,7 +307,7 @@ class Net_Gearman_Client
             'arg'  => $arg
         );
 
-        $s = $this->getConnection($task->uniq);
+        $s = $this->getConnection($task);
         Net_Gearman_Connection::send($s, $type, $params);
 
         if (!is_array(Net_Gearman_Connection::$waiting[(int)$s])) {

@@ -73,7 +73,9 @@ class Net_Gearman_Connection
         'echo_req' => array(16, array('text')),
         'echo_res' => array(17, array('text')),
         'error' => array(19, array('err_code', 'err_text')),
-        'all_yours' => array(24, array())
+        'all_yours' => array(24, array()),
+        'status'=>array ('status', array ())
+
     );
 
     /**
@@ -205,16 +207,21 @@ class Net_Gearman_Connection
             }
         }
 
-        $d = implode("\x00", $data);
 
-        $cmd = "\0REQ" . pack("NN",
-                              self::$commands[$command][0],
-                              self::stringLength($d)) . $d;
-
+        if (is_integer(self::$commands[$command][0])) {
+            $d = implode("\x00", $data);
+            $cmd = "\0REQ" . pack("NN",
+                                  self::$commands[$command][0],
+                                  self::stringLength($d)) . $d;
+        } else {
+            $cmd = self::$commands[$command][0].' '.implode($data,' ')."\n";
+        }
         $cmdLength = self::stringLength($cmd);
         $written = 0;
         $error = false;
+
         do {
+
             $check = @socket_write($socket,
                                    self::subString($cmd, $written, $cmdLength),
                                    $cmdLength);
@@ -423,4 +430,17 @@ class Net_Gearman_Connection
             return substr($str, $start, $length);
         }
     }
+
+    static public function status ($conn) {
+        Net_Gearman_Connection::send($conn, 'status');
+        $header = '';
+        do {
+            $buf = @socket_read($conn, 1);
+            $header .= $buf;
+        } while (($buf !== false &&
+            $buf !== '') || $header=='');
+        return $header;
+    }
+
+
 }
