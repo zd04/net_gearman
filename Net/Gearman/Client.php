@@ -72,9 +72,14 @@ class Net_Gearman_Client
     protected $jobs = array ();
 
     protected $assertWorker = false;
+    protected $assertBgWorker = false;
 
-    public function setAssetWorker ($pBool) {
+    public function setAssertWorker ($pBool) {
         $this->assertWorker = $pBool;
+    }
+
+    public function setAssertBgWorker ($pBool) {
+        $this->assertBgWorker = $pBool;
     }
 
     /**
@@ -208,11 +213,19 @@ class Net_Gearman_Client
         if(isset ($this->jobs[$uniq->func])){
             $conn = $this->jobs[$uniq->func][array_rand($this->jobs[$uniq->func])];
         } else {
-            if ($this->assertWorker) {
-                throw new \Exception('No workers');
+            if($uniq->type == Net_Gearman_Task::JOB_BACKGROUND ||
+                $uniq->type == Net_Gearman_Task::JOB_HIGH_BACKGROUND ||
+                $uniq->type == Net_Gearman_Task::JOB_LOW_BACKGROUND){
+                if ($this->assertBgWorker) {
+                    throw new \Exception('No workers for background call '.$uniq->func);
+                }
+
             } else {
-                $conn = $this->conn[array_rand($this->conn)];
+                if ($this->assertWorker) {
+                    throw new \Exception('No workers for call '.$uniq->func);
+                }
             }
+                $conn = $this->conn[array_rand($this->conn)];
         }
 
         return $conn;
