@@ -1,6 +1,6 @@
 {
     "name":"Alptis/net_gearman",
     "autoload":{
-        "classmap":["./Net/Gearman"]
+        "classmap":["./"]
     }
 }
