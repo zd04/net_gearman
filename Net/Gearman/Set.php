@@ -21,14 +21,12 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'Net/Gearman/Task.php';
 
 /**
  * A class for creating sets of tasks
  *
  * <code>
  * <?php
- * require_once 'Net/Gearman/Client.php';
  *
  * // This is the callback function for our tasks
  * function echoResult($result) {
