@@ -20,8 +20,6 @@
  * @link      http://www.danga.com/gearman/
  */
 
-require_once 'Net/Gearman/Connection.php';
-require_once 'Net/Gearman/Job.php';
 
 /**
  * Gearman worker class
