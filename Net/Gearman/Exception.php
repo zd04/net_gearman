@@ -34,6 +34,6 @@
  * @version   Release: @package_version@
  * @see       PEAR_Exception
  */
-class Net_Gearman_Exception extends PEAR_Exception
+class Net_Gearman_Exception extends Exception
 {
 }
