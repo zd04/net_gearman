@@ -143,10 +143,12 @@ class Net_Gearman_Manager
                 continue;
             }
 
-            list($info, $abilities) = explode(" : ", $t);
-            list($fd, $ip, $id)     = explode(' ', $info);
+            // Abilities might be empty ; prevent PHP Notice if they are.
+            $parts = explode(" : ", $t);
+            $info = isset($parts[0]) ? $parts[0] : "";
+            $abilities = isset($parts[1]) ? trim($parts[1]) : "";
 
-            $abilities = trim($abilities);
+            list($fd, $ip, $id)     = explode(' ', $info);
 
             $workers[] = array(
                 'fd' => $fd,
