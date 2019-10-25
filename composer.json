@@ -1,5 +1,5 @@
 {
-    "name":"alptis/net-gearman",
+    "name":"zd04/net-gearman",
     "description":"Drivers Gearman PHP",
     "autoload":{
         "classmap":["./"]
