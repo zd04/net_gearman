@@ -125,6 +125,14 @@ abstract class Net_Gearman_Job_Common
             'handle' => $this->handle,
             'result' => $result
         ));
+
+        $this->debugLog($socket,[
+            'req'=>'work_complete',
+            'params'=>[            
+                'handle' => $this->handle,
+                'result' => $result
+            ],
+        ]);
     }
 
     /**
@@ -142,5 +150,12 @@ abstract class Net_Gearman_Job_Common
         Net_Gearman_Connection::send($this->conn, 'work_fail', array(
             'handle' => $this->handle
         ));
+
+        $this->debugLog($socket,[
+            'req'=>'work_fail',
+            'params'=>[            
+                'handle' => $this->handle
+            ],
+        ]);
     }
 }

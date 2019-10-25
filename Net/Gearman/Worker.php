@@ -62,6 +62,8 @@
  */
 class Net_Gearman_Worker
 {
+    protected $debug = false;
+
     /**
      * Pool of connections to Gearman servers
      *
@@ -133,8 +135,10 @@ class Net_Gearman_Worker
      * @throws Net_Gearman_Exception
      * @see Net_Gearman_Connection
      */
-    public function __construct($servers = null, $id = "")
+    public function __construct($servers = null, $id = "", $debug = false)
     {
+        $this->debug = $debug;
+
         if (is_null($servers)){
             $servers = array("localhost");
         } elseif (!is_array($servers) && strlen($servers)) {
@@ -152,8 +156,18 @@ class Net_Gearman_Worker
         foreach ($servers as $s) {
             try {
                 $conn = Net_Gearman_Connection::connect($s);
+                $this->debugLog($conn,[
+                    'req'=>'connect',
+                    'params'=>'',
+                ]);
+
 
                 Net_Gearman_Connection::send($conn, "set_client_id", array("client_id" => $this->id));
+
+                $this->debugLog($conn,[
+                    'req'=>'set_client_id',
+                    'params'=>["client_id" => $this->id],
+                ]);
 
                 $this->conn[$s] = $conn;
 
@@ -194,8 +208,40 @@ class Net_Gearman_Worker
         $this->abilities[$ability] = $timeout;
 
         foreach ($this->conn as $conn) {
+            $this->debugLog($conn,[
+                'req'=>$call,
+                'params'=>$params,
+            ]);
             Net_Gearman_Connection::send($conn, $call, $params);
         }
+    }
+
+
+    public function debugLog($conn,$logs){
+        if(!$this->debug){
+            return;
+        }else{
+            echo "ConnId:".(int)$conn.':'.json_encode($logs),PHP_EOL;
+        }
+    }
+
+    /**
+    *
+    */
+    public function registerFunction($ability, $callback, $timeout = null, $initParams=array()){
+        
+        Net_Gearman_Job::addCallbacks($ability,$callback);
+
+        $this->addAbility($ability, $timeout, $initParams);        
+    }
+
+
+    public function enDebug(){
+        $this->debug = true;
+    }
+
+    public function disDebug(){
+        $this->debug = false;
     }
 
     /**
@@ -246,7 +292,13 @@ class Net_Gearman_Worker
             $idle = false;
             if ($sleep && count($this->conn)) {
                 foreach ($this->conn as $socket) {
+
                     Net_Gearman_Connection::send($socket, 'pre_sleep');
+
+                    $this->debugLog($socket,[
+                        'req'=>'pre_sleep',
+                        'params'=>[],
+                    ]);
                 }
 
                 $read = $this->conn;
@@ -306,10 +358,19 @@ class Net_Gearman_Worker
     {
         Net_Gearman_Connection::send($socket, 'grab_job');
 
+        $this->debugLog($socket,[
+            'req'=>'grab_job',
+            'params'=>[],
+        ]);
+
         $resp = array('function' => 'noop');
         while (count($resp) && $resp['function'] == 'noop') {
             $resp = Net_Gearman_Connection::blockingRead($socket);
         }
+
+        $this->debugLog($socket,[
+            'res'=>$resp
+        ]);
 
         if (in_array($resp['function'], array('noop', 'no_job'))) {
             return false;
@@ -336,9 +397,14 @@ class Net_Gearman_Worker
         );
         try {
             $this->start($handle, $name, $arg);
-            $res = $job->run($arg);
 
-            $job->complete($res);
+            if($job instanceof Closure){
+                $res = $job($arg);
+            }else{
+                $res = $job->run($arg);
+                $job->complete($res);
+            } 
+
             $this->complete($handle, $name, $res);
         } catch (Net_Gearman_Job_Exception $e) {
             $job->fail();

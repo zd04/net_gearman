@@ -36,6 +36,7 @@
  */
 class Net_Gearman_Client
 {
+    protected $debug = false;
     /**
      * Our randomly selected connection
      *
@@ -64,6 +65,23 @@ class Net_Gearman_Client
      */
     protected $timeout = 1000;
 
+    public function enDebug(){
+        $this->debug = true;
+    }
+
+    public function disDebug(){
+        $this->debug = false;
+    }
+
+
+    public function debugLog($conn,$logs){
+        if(!$this->debug){
+            return;
+        }else{
+            echo "ConnId:".(int)$conn.':'.json_encode($logs),PHP_EOL;
+        }
+    }
+
     /**
      * Constructor
      *
@@ -74,8 +92,10 @@ class Net_Gearman_Client
      * @throws Net_Gearman_Exception
      * @see Net_Gearman_Connection
      */
-    public function __construct($servers = null, $timeout = 1000)
+    public function __construct($servers = null, $timeout = 1000, $debug = false)
     {
+        $this->debug = $debug;
+
         if (is_null($servers)){
             $servers = array("localhost");
         } elseif (!is_array($servers) && strlen($servers)) {
@@ -92,6 +112,10 @@ class Net_Gearman_Client
             }
             try {
                 $conn = Net_Gearman_Connection::connect($server, $timeout);
+                $this->debugLog($conn,[
+                    'req'=>'connect',
+                    'params'=>[],
+                ]);
             } catch (Net_Gearman_Exception $e) {
                 unset($this->servers[$key]);
                 continue;
@@ -146,6 +170,9 @@ class Net_Gearman_Client
 
             foreach ($read as $socket) {
                 $resp = Net_Gearman_Connection::read($socket);
+                $this->debugLog($socket,[
+                    'res'=>$resp
+                ]);
 
                 if (isset($resp['function'], $resp['data'])
                     && ($resp['function'] == 'status_res')
@@ -286,6 +313,12 @@ class Net_Gearman_Client
         $s = $this->getConnection($task->uniq);
         Net_Gearman_Connection::send($s, $type, $params);
 
+        $this->debugLog($s,[
+            'req'=>$type,
+            'params'=>$params,
+        ]);
+
+
         if (!is_array(Net_Gearman_Connection::$waiting[(int)$s])) {
             Net_Gearman_Connection::$waiting[(int)$s] = array();
         }
@@ -356,6 +389,11 @@ class Net_Gearman_Client
             socket_select($read, $write, $except, $socket_timeout);
             foreach ($read as $socket) {
                 $resp = Net_Gearman_Connection::read($socket);
+
+                $this->debugLog($socket,[
+                    'res'=>$resp
+                ]);
+
                 if (count($resp)) {
                     $this->handleResponse($resp, $socket, $set);
                 }
